@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<GenAiFunction xmlns="http://soap.sforce.com/2006/04/metadata">
+    <description>This Flow makes an API call to the OpenAI Web Research API call.</description>
+    <developerName>OpenAI_Web_Research_Agent_Action</developerName>
+    <invocationTarget>OpenAI_Web_Research_Flow</invocationTarget>
+    <invocationTargetType>flow</invocationTargetType>
+    <isConfirmationRequired>false</isConfirmationRequired>
+    <isIncludeInProgressIndicator>true</isIncludeInProgressIndicator>
+    <masterLabel>OpenAI Web Research Agent Action</masterLabel>
+    <progressIndicatorMessage>Web Researching...</progressIndicatorMessage>
+</GenAiFunction>

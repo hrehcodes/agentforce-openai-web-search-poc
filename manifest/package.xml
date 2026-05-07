@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Package xmlns="http://soap.sforce.com/2006/04/metadata">
+    <types>
+        <members>OpenAIWebSearchAction</members>
+        <name>ApexClass</name>
+    </types>
+    <types>
+        <members>OpenAI_Web_Research_Flow</members>
+        <name>Flow</name>
+    </types>
+    <types>
+        <members>OpenAI_Web_Research_Agent_Action</members>
+        <name>GenAiFunction</name>
+    </types>
+    <types>
+        <members>OpenAI_Web_Search_Answer_Formatter</members>
+        <name>GenAiPromptTemplate</name>
+    </types>
+    <types>
+        <members>OpenAI</members>
+        <name>RemoteSiteSetting</name>
+    </types>
+    <version>66.0</version>
+</Package>

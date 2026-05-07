@@ -1,0 +1,14 @@
+{
+  "required" : [ "search_query" ],
+  "unevaluatedProperties" : false,
+  "properties" : {
+    "search_query" : {
+      "title" : "search_query",
+      "description" : "This is the search query that will be passed to the OpenAI Web Search Action",
+      "lightning:type" : "lightning__textType",
+      "lightning:isPII" : false,
+      "copilotAction:isUserInput" : false
+    }
+  },
+  "lightning:type" : "lightning__objectType"
+}

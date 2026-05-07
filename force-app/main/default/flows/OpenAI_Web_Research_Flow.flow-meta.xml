@@ -1,0 +1,164 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+    <actionCalls>
+        <description>This prompt answer formats the final answer for the OpenAI Web Research Action.</description>
+        <name>Final_Answer_Formatter</name>
+        <label>Final Answer Formatter</label>
+        <locationX>176</locationX>
+        <locationY>350</locationY>
+        <actionName>OpenAI_Web_Search_Answer_Formatter</actionName>
+        <actionType>generatePromptResponse</actionType>
+        <flowTransactionModel>CurrentTransaction</flowTransactionModel>
+        <inputParameters>
+            <name>Input:OpenAI_Web_Search_Answer</name>
+            <value>
+                <elementReference>OpenAI_Response</elementReference>
+            </value>
+        </inputParameters>
+        <inputParameters>
+            <name>Input:OpenAI_Web_Search_Full_JSON</name>
+            <value>
+                <elementReference>OpenAI_Response_Metadata</elementReference>
+            </value>
+        </inputParameters>
+        <inputParameters>
+            <name>Input:Search_Query</name>
+            <value>
+                <elementReference>search_query</elementReference>
+            </value>
+        </inputParameters>
+        <nameSegment>OpenAI_Web_Search_Answer_Formatter</nameSegment>
+        <offset>0</offset>
+        <outputParameters>
+            <assignToReference>Final_Answer</assignToReference>
+            <name>promptResponse</name>
+        </outputParameters>
+    </actionCalls>
+    <actionCalls>
+        <description>This is an API call to the GPT-4o API with web search tool enabled.</description>
+        <name>OpenAI_Web_Search_API_Call</name>
+        <label>OpenAI Web Search API Call</label>
+        <locationX>176</locationX>
+        <locationY>134</locationY>
+        <actionName>OpenAIWebSearchAction</actionName>
+        <actionType>apex</actionType>
+        <connector>
+            <targetReference>Assign_Response_to_Variable</targetReference>
+        </connector>
+        <flowTransactionModel>CurrentTransaction</flowTransactionModel>
+        <inputParameters>
+            <name>apiKey</name>
+            <value>
+                <elementReference>OpenAI_API_KEY</elementReference>
+            </value>
+        </inputParameters>
+        <inputParameters>
+            <name>searchQuery</name>
+            <value>
+                <elementReference>search_query</elementReference>
+            </value>
+        </inputParameters>
+        <nameSegment>OpenAIWebSearchAction</nameSegment>
+        <offset>0</offset>
+        <storeOutputAutomatically>true</storeOutputAutomatically>
+    </actionCalls>
+    <apiVersion>63.0</apiVersion>
+    <areMetricsLoggedToDataCloud>false</areMetricsLoggedToDataCloud>
+    <assignments>
+        <description>Assign answers to variables.</description>
+        <name>Assign_Response_to_Variable</name>
+        <label>Assign Response to Variable</label>
+        <locationX>176</locationX>
+        <locationY>242</locationY>
+        <assignmentItems>
+            <assignToReference>OpenAI_Response</assignToReference>
+            <operator>Assign</operator>
+            <value>
+                <elementReference>OpenAI_Web_Search_API_Call.responseText</elementReference>
+            </value>
+        </assignmentItems>
+        <assignmentItems>
+            <assignToReference>OpenAI_Response_Metadata</assignToReference>
+            <operator>Assign</operator>
+            <value>
+                <elementReference>OpenAI_Web_Search_API_Call.fullJsonResponse</elementReference>
+            </value>
+        </assignmentItems>
+        <connector>
+            <targetReference>Final_Answer_Formatter</targetReference>
+        </connector>
+    </assignments>
+    <description>This Flow makes an API call to the OpenAI Web Research API call.</description>
+    <environments>Default</environments>
+    <interviewLabel>OpenAI Web Research Flow {!$Flow.CurrentDateTime}</interviewLabel>
+    <label>OpenAI Web Research Flow</label>
+    <processMetadataValues>
+        <name>BuilderType</name>
+        <value>
+            <stringValue>LightningFlowBuilder</stringValue>
+        </value>
+    </processMetadataValues>
+    <processMetadataValues>
+        <name>CanvasMode</name>
+        <value>
+            <stringValue>AUTO_LAYOUT_CANVAS</stringValue>
+        </value>
+    </processMetadataValues>
+    <processMetadataValues>
+        <name>OriginBuilderType</name>
+        <value>
+            <stringValue>LightningFlowBuilder</stringValue>
+        </value>
+    </processMetadataValues>
+    <processType>AutoLaunchedFlow</processType>
+    <start>
+        <locationX>50</locationX>
+        <locationY>0</locationY>
+        <connector>
+            <targetReference>OpenAI_Web_Search_API_Call</targetReference>
+        </connector>
+    </start>
+    <status>Active</status>
+    <variables>
+        <description>This is the final rich text formatted answer.</description>
+        <name>Final_Answer</name>
+        <dataType>String</dataType>
+        <isCollection>false</isCollection>
+        <isInput>false</isInput>
+        <isOutput>true</isOutput>
+    </variables>
+    <variables>
+        <name>OpenAI_API_KEY</name>
+        <dataType>String</dataType>
+        <isCollection>false</isCollection>
+        <isInput>false</isInput>
+        <isOutput>false</isOutput>
+        <value>
+            <stringValue>&lt;YOUR API KEY HERE&gt;</stringValue>
+        </value>
+    </variables>
+    <variables>
+        <description>This is the response from the OpenAI Web Research API.</description>
+        <name>OpenAI_Response</name>
+        <dataType>String</dataType>
+        <isCollection>false</isCollection>
+        <isInput>false</isInput>
+        <isOutput>true</isOutput>
+    </variables>
+    <variables>
+        <description>This is the response metadata from the OpenAI Web Research API.</description>
+        <name>OpenAI_Response_Metadata</name>
+        <dataType>String</dataType>
+        <isCollection>false</isCollection>
+        <isInput>false</isInput>
+        <isOutput>true</isOutput>
+    </variables>
+    <variables>
+        <description>This is the search query that will be passed to the OpenAI Web Search Action</description>
+        <name>search_query</name>
+        <dataType>String</dataType>
+        <isCollection>false</isCollection>
+        <isInput>true</isInput>
+        <isOutput>false</isOutput>
+    </variables>
+</Flow>
