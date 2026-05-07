@@ -1,126 +1,100 @@
 public with sharing class OpenAIWebSearchAction {
-    
-    // Input class for Flow: collects the API key and the user’s search query.
+    private static final String ENDPOINT = 'callout:OpenAI_API/v1/responses';
+    private static final Integer MAX_ATTEMPTS = 2;
+
     public class OpenAIWebSearchInput {
-        @InvocableVariable(label='OpenAI API Key' required=true)
-        public String apiKey;
-        
-        @InvocableVariable(label='Search Query' required=true)
-        public String searchQuery;
+        @InvocableVariable(label='Search Query' required=true) public String searchQuery;
     }
-    
-    // Output class for Flow: returns the text portion of the response
-    // plus the entire JSON response (for logging or troubleshooting).
     public class OpenAIWebSearchOutput {
-        @InvocableVariable(label='Response Text')
-        public String responseText;
-        
-        @InvocableVariable(label='Full JSON Response')
-        public String fullJsonResponse;
+        @InvocableVariable(label='Response Text') public String responseText;
+        @InvocableVariable(label='Response Metadata') public String fullJsonResponse;
     }
-    
-    @InvocableMethod(
-        label='Call OpenAI Web Search' 
-        description='Calls the OpenAI Web Search endpoint with the provided API key and search query.'
-    )
+
+    @InvocableMethod(label='Call OpenAI Web Search' description='Calls the OpenAI Responses API with web search enabled through the OpenAI_API named credential.')
     public static List<OpenAIWebSearchOutput> callOpenAIWebSearch(List<OpenAIWebSearchInput> inputList) {
-        
-        // Validate that we have at least one record.
-        if(inputList == null || inputList.isEmpty()) {
+        if (inputList == null || inputList.isEmpty()) {
             throw new IllegalArgumentException('No input provided to OpenAIWebSearchAction.');
         }
-        
-        // We’ll only process the first record for simplicity.
-        OpenAIWebSearchInput input = inputList[0];
-        
-        // Construct the HTTP request to the OpenAI /v1/responses endpoint.
-        String endpoint = 'https://api.openai.com/v1/responses';
-        
-        // Build the JSON body as shown in your sample request:
-        // {
-        //   "model": "gpt-4o",
-        //   "tools": [{"type": "web_search"}],
-        //   "input": "<user's search query>"
-        // }
-        Map<String, Object> requestBody = new Map<String, Object>{
-            'model' => 'gpt-4o',
-            'tools' => new List<Object>{ new Map<String, Object>{ 'type' => 'web_search' } },
-            'input' => input.searchQuery
-        };
-        
-        // Serialize the body to JSON.
-        String body = JSON.serialize(requestBody);
-        
-        // Prepare the HTTP request.
-        HttpRequest req = new HttpRequest();
-        req.setEndpoint(endpoint);
-        req.setMethod('POST');
-        
-        // OpenAI expects a Bearer token in the Authorization header.
-        // This is the user-provided API key.
-        req.setHeader('Authorization', 'Bearer ' + input.apiKey);
-        req.setHeader('Content-Type', 'application/json');
-        
-        // Attach the request body.
-        req.setBody(body);
-        
-        // You can optionally set a higher timeout if you expect longer processing.
-        req.setTimeout(120000); // 120 seconds
-        
-        Http http = new Http();
-        OpenAIWebSearchOutput output = new OpenAIWebSearchOutput();
-        
-        try {
-            // Make the callout.
-            HttpResponse res = http.send(req);
-            
-            // Check for success (HTTP 200).
-            if(res.getStatusCode() == 200) {
-                // Parse the JSON response.
-                Map<String, Object> jsonResponse = (Map<String, Object>) JSON.deserializeUntyped(res.getBody());
-                
-                // Store the full JSON for debugging or logs.
-                output.fullJsonResponse = res.getBody();
-                
-                // Attempt to extract the “message” text from the "output" array.
-                if(jsonResponse.containsKey('output')) {
-                    List<Object> outputList = (List<Object>) jsonResponse.get('output');
-                    if(outputList != null && outputList.size() > 1) {
-                        
-                        // The second item is typically the “message” object with user-facing text.
-                        Map<String, Object> messageObj = (Map<String, Object>) outputList[1];
-                        
-                        // Confirm it has "content" array.
-                        if(messageObj.containsKey('content')) {
-                            List<Object> contentArray = (List<Object>) messageObj.get('content');
-                            
-                            if(contentArray != null && !contentArray.isEmpty()) {
-                                // Each content item can have a "text" field, among others.
-                                Map<String, Object> firstContent = (Map<String, Object>) contentArray[0];
-                                if(firstContent.containsKey('text')) {
-                                    output.responseText = (String) firstContent.get('text');
-                                }
-                            }
-                        }
-                    }
-                }
-                
-                // If parsing fails or structure is unexpected, responseText might remain null/blank.
-                // You could add more robust checks as needed.
-                
-            } else {
-                // Non-200 response: capture status code and entire response for clarity.
-                output.responseText = 'Error: ' + res.getStatusCode() + ' ' + res.getStatus();
-                output.fullJsonResponse = res.getBody();
-            }
-            
-        } catch(Exception ex) {
-            // Capture the exception details in the output.
-            output.responseText = 'Exception: ' + ex.getMessage();
-            output.fullJsonResponse = 'No response body due to exception.';
+        List<OpenAIWebSearchOutput> outputs = new List<OpenAIWebSearchOutput>();
+        for (OpenAIWebSearchInput input : inputList) {
+            outputs.add(callOne(input));
         }
-        
-        // Return a single record back to the Flow.
-        return new List<OpenAIWebSearchOutput>{ output };
+        return outputs;
+    }
+
+    private static OpenAIWebSearchOutput callOne(OpenAIWebSearchInput input) {
+        OpenAIWebSearchOutput output = new OpenAIWebSearchOutput();
+        try {
+            if (input == null || String.isBlank(input.searchQuery)) {
+                output.responseText = 'Error: Search query is required.';
+                output.fullJsonResponse = '{}';
+                return output;
+            }
+            Map<String, Object> requestBody = new Map<String, Object>{
+                'model' => 'gpt-4o',
+                'tools' => new List<Object>{ new Map<String, Object>{ 'type' => 'web_search' } },
+                'input' => input.searchQuery
+            };
+            HttpRequest req = new HttpRequest();
+            req.setEndpoint(ENDPOINT);
+            req.setMethod('POST');
+            req.setHeader('Content-Type', 'application/json');
+            req.setBody(JSON.serialize(requestBody));
+            req.setTimeout(60000);
+            Http http = new Http();
+            HttpResponse res;
+            for (Integer attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+                res = http.send(req);
+                Integer statusCode = res.getStatusCode();
+                if (statusCode == 200) {
+                    return parseSuccess(res.getBody());
+                }
+                if (!(statusCode == 429 || statusCode >= 500) || attempt == MAX_ATTEMPTS) {
+                    output.responseText = sanitizeProviderError(statusCode, res.getStatus());
+                    output.fullJsonResponse = '{}';
+                    return output;
+                }
+            }
+            output.responseText = 'Error: OpenAI did not return a usable response.';
+            output.fullJsonResponse = '{}';
+        } catch (Exception ex) {
+            output.responseText = 'Error: OpenAI callout failed. ' + ex.getMessage();
+            output.fullJsonResponse = '{}';
+        }
+        return output;
+    }
+
+    private static OpenAIWebSearchOutput parseSuccess(String body) {
+        OpenAIWebSearchOutput output = new OpenAIWebSearchOutput();
+        Map<String, Object> jsonResponse = (Map<String, Object>) JSON.deserializeUntyped(body);
+        output.responseText = extractText(jsonResponse);
+        output.fullJsonResponse = JSON.serialize(new Map<String, Object>{
+            'responseId' => jsonResponse.get('id'),
+            'status' => jsonResponse.get('status')
+        });
+        return output;
+    }
+
+    private static String extractText(Map<String, Object> jsonResponse) {
+        List<Object> outputList = (List<Object>) jsonResponse.get('output');
+        if (outputList == null) return 'No OpenAI output was returned.';
+        List<String> texts = new List<String>();
+        for (Object outputItemObj : outputList) {
+            Map<String, Object> outputItem = (Map<String, Object>) outputItemObj;
+            List<Object> contentArray = (List<Object>) outputItem.get('content');
+            if (contentArray == null) continue;
+            for (Object contentObj : contentArray) {
+                Map<String, Object> content = (Map<String, Object>) contentObj;
+                if (content.containsKey('text')) texts.add((String) content.get('text'));
+            }
+        }
+        return texts.isEmpty() ? 'No OpenAI text response was returned.' : String.join(texts, '\n');
+    }
+
+    private static String sanitizeProviderError(Integer statusCode, String status) {
+        if (statusCode == 401 || statusCode == 403) return 'Error: OpenAI authentication failed. Verify the named credential principal is configured.';
+        if (statusCode == 429) return 'Error: OpenAI rate limit exceeded. Please try again later.';
+        if (statusCode >= 500) return 'Error: OpenAI is temporarily unavailable. Please try again later.';
+        return 'Error: OpenAI request failed with HTTP ' + statusCode + (String.isBlank(status) ? '.' : ' ' + status + '.');
     }
 }

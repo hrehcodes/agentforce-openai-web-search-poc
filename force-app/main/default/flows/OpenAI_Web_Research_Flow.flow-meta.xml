@@ -47,12 +47,6 @@
         </connector>
         <flowTransactionModel>CurrentTransaction</flowTransactionModel>
         <inputParameters>
-            <name>apiKey</name>
-            <value>
-                <elementReference>OpenAI_API_KEY</elementReference>
-            </value>
-        </inputParameters>
-        <inputParameters>
             <name>searchQuery</name>
             <value>
                 <elementReference>search_query</elementReference>
@@ -126,16 +120,6 @@
         <isCollection>false</isCollection>
         <isInput>false</isInput>
         <isOutput>true</isOutput>
-    </variables>
-    <variables>
-        <name>OpenAI_API_KEY</name>
-        <dataType>String</dataType>
-        <isCollection>false</isCollection>
-        <isInput>false</isInput>
-        <isOutput>false</isOutput>
-        <value>
-            <stringValue>&lt;YOUR API KEY HERE&gt;</stringValue>
-        </value>
     </variables>
     <variables>
         <description>This is the response from the OpenAI Web Research API.</description>

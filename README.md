@@ -93,3 +93,26 @@ sf project deploy start --manifest manifest/package.xml --target-org <target-org
 - Keep generated secrets, local org auth files, `.sf`, `.sfdx`, and deployment output out of source control.
 - Treat prompt templates and Agentforce action descriptions as production behavior, not just documentation.
 - For production hardening, prefer Named Credential and External Credential patterns over passing API keys directly through Flow variables.
+
+## Hardening Update
+Security and reliability improvements applied after migration:
+- OpenAI API keys are no longer Flow or Apex inputs; use the OpenAI_API named credential and OpenAI_API_EC external credential.
+- Response parsing no longer assumes a fixed output array index.
+- Provider metadata is reduced to safe operational fields before being passed to Prompt Builder.
+
+## Known Limitations
+- This remains a POC. Review model choice, data-retention expectations, and OpenAI account policy before production use.
+- Configure OpenAI_API_Access for the Agentforce running user.
+
+## Test Commands
+Validate metadata and run relevant tests after authenticating to a target org:
+
+```bash
+sf project deploy start --dry-run --manifest manifest/package.xml --target-org <target-org> --wait 30
+sf apex run test --class-names OpenAIWebSearchAction_Test --target-org <target-org> --result-format human --wait 10
+```
+
+## Troubleshooting
+- If an Agentforce action cannot authenticate, confirm the named principal secret is configured in the target org and the running user has the included permission set.
+- If a prompt action returns unsupported or unsafe content, review the prompt template safety rules and test with malicious retrieved content.
+- If deployment fails on Agentforce metadata, deploy supporting objects, Apex, Flows, credentials, and prompt templates first, then wire/publish the target agent in Builder.
